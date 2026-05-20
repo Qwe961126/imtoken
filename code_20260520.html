@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>imToken × Puffer 质押工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .connect-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .connect-btn:hover {
+            background: #1d4ed8;
+        }
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stake-section {
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+        .token-select {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .stake-btn {
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .stake-btn:hover {
+            opacity: 0.9;
+        }
+        .info-text {
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div style="width:36px;height:36px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">im</div>
+                <span class="logo-text">imToken × Puffer</span>
+            </div>
+            <button class="connect-btn" id="connectBtn">连接钱包</button>
+        </div>
+
+        <h1 class="title">Puffer 质押工具</h1>
+
+        <div class="stake-section">
+            <div class="input-group">
+                <label>质押资产</label>
+                <div class="input-wrapper">
+                    <input type="number" placeholder="输入数量" id="stakeAmount">
+                    <select class="token-select" id="tokenType">
+                        <option value="ETH">ETH</option>
+                        <option value="stETH">stETH</option>
+                        <option value="wstETH">wstETH</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>铸造 pufETH</label>
+                <div class="input-wrapper">
+                    <input type="text" placeholder="预计获得数量" disabled>
+                    <span style="color:#8b5cf6;font-weight:500;">pufETH</span>
+                </div>
+            </div>
+
+            <button class="stake-btn" id="stakeBtn">确认质押</button>
+        </div>
+
+        <p class="info-text">兼容 imToken 钱包（基于 Token Core）<br>支持 ETH / stETH / wstETH 质押铸造 pufETH</p>
+    </div>
+
+    <script>
+        // 简单的钱包连接逻辑（适配 imToken）
+        let isConnected = false;
+        const connectBtn = document.getElementById('connectBtn');
+        const stakeBtn = document.getElementById('stakeBtn');
+
+        connectBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    isConnected = true;
+                    connectBtn.textContent = `已连接: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
+                    connectBtn.style.background = '#10b981';
+                } catch (error) {
+                    alert('连接失败，请在 imToken 中打开');
+                }
+            } else {
+                alert('请在 imToken 内置浏览器中打开此页面');
+            }
+        });
+
+        stakeBtn.addEventListener('click', () => {
+            if (!isConnected) {
+                alert('请先连接钱包');
+                return;
+            }
+            const amount = document.getElementById('stakeAmount').value;
+            if (!amount || amount <= 0) {
+                alert('请输入有效的质押数量');
+                return;
+            }
+            alert('质押功能演示完成！实际部署需对接 Puffer 合约');
+        });
+    </script>
+</body>
+</html>
